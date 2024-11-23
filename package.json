@@ -1,0 +1,27 @@
+{
+	"name": "middleware-server",
+	"version": "1.0.0",
+	"description": "middleware api server for correct information proccessing of radio24 streams",
+	"main": "src/app.js",
+	"module": "src/app.js",
+	"type": "module",
+	"scripts": {
+		"start": "node src/app.js",
+		"dev": "nodemon src/app.js"
+	},
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"axios": "^1.7.7",
+		"dotenv": "^16.4.5",
+		"express": "^4.21.1",
+		"http": "^0.0.1-security",
+		"iconv-lite": "^0.6.3",
+		"nodemon": "^3.1.7",
+		"path": "^0.12.7",
+		"socket.io": "^4.8.1",
+		"socket.io-client": "^4.8.1",
+		"sqlite3": "^5.1.7",
+		"url": "^0.11.4"
+	}
+}
