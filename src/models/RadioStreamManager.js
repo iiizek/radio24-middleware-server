@@ -49,10 +49,10 @@ export async function syncStreamsWithIcecast() {
 
 				const decodedTitle = matchingSource.title
 					? decodeWithFallback(Buffer.from(matchingSource.title, 'binary'))
-					: 'Прямой эфир';
+					: null;
 				const [artist, title] = decodedTitle
 					? decodedTitle.split(' - ')
-					: ['Прямой', 'эфир'];
+					: ['Прямой эфир', null];
 
 				await updateRadioStream(record.listen_url, {
 					listeners: matchingSource.listeners,
