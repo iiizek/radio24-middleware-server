@@ -5,29 +5,31 @@ import 'dotenv/config';
 
 import { trackCoverController } from './controllers/trackCoverController.js';
 import { radioStreamController } from './controllers/radioStreamController.js';
-import RadioStreamManager from './models/RadioStreamManager.js';
+import { startStreamSync } from './models/RadioStreamManager.js';
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.EXPRESS_PORT || 3000;
-const radioStreamManager = new RadioStreamManager(io);
+
+// Запуск синхронизации потоков с Icecast
+startStreamSync(io);
 
 // Подключение WebSocket
 io.on('connection', (socket) => {
 	console.log('Новый клиент подключился:', socket.id);
-
-	socket.emit('radio-streams', radioStreamManager.streams);
 
 	socket.on('disconnect', () => {
 		console.log('Клиент отключился:', socket.id);
 	});
 });
 
+// Маршруты API
 app.use('/api', trackCoverController);
 app.use('/api', radioStreamController);
 
+// Запуск сервера
 server.listen(PORT, () => {
 	console.log(`Промежуточный сервер запущен на порту ${PORT}`);
 });

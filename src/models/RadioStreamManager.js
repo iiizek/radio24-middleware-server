@@ -1,86 +1,81 @@
 import {
 	getRadioStreamData,
 	updateRadioStream,
-	createRadioStream,
 } from '../services/directusService.js';
 import { fetchIcecastData } from '../services/icecastService.js';
 import { decodeWithFallback } from '../utils/decoder.js';
 
-class RadioStreamManager {
-	constructor(io) {
-		this.streams = [];
-		this.icecastUrl = 'https://stream.vyshka24.ru/status-json.xsl';
-		this.io = io; // Экземпляр socket.io
-		this.startUpdating();
-	}
+const icecastUrl = 'https://stream.vyshka24.ru/status-json.xsl';
 
-	async fetchStreams() {
-		try {
-			// Получаем данные с Icecast
-			const icecastData = await fetchIcecastData(this.icecastUrl);
+// Извлечение окончания URL
+function extractStreamKey(listenUrl) {
+	const urlParts = listenUrl.split('/');
+	return urlParts[urlParts.length - 1]; // Возвращает последний сегмент
+}
 
-			// Получаем существующие записи в Directus
-			const existingStreams = await getRadioStreamData();
+// Функция синхронизации данных
+export async function syncStreamsWithIcecast() {
+	try {
+		// Получаем данные с Icecast
+		const icecastData = await fetchIcecastData(icecastUrl);
 
-			const icecastSources = icecastData.icestats.source;
+		// Получаем существующие записи из Directus
+		const existingStreams = await getRadioStreamData();
 
-			// Добавляем недостающие записи в Directus
-			const missingCount = icecastSources.length - existingStreams.length;
-			if (missingCount > 0) {
-				for (let i = 0; i < missingCount; i++) {
-					await createRadioStream({
-						listenUrl: null,
-						listeners: 0,
-						serverUrl: null,
-						artist: null,
-						title: null,
-					});
-				}
+		const icecastSources = icecastData.icestats.source;
+
+		// Извлекаем все listen_url из Icecast
+		const icecastStreamKeys = icecastSources.map((stream) =>
+			extractStreamKey(stream.listenurl)
+		);
+
+		// Сопоставляем данные с Icecast с записями в Directus
+		for (const record of existingStreams) {
+			const streamKey = extractStreamKey(record.listen_url);
+
+			// Проверяем, есть ли поток в Icecast
+			const isStreamed = icecastStreamKeys.includes(streamKey);
+
+			// Обновляем поле isStreamed
+			await updateRadioStream(record.listen_url, {
+				isStreamed,
+			});
+
+			// Если поток есть, обновляем остальные поля
+			if (isStreamed) {
+				const matchingSource = icecastSources.find(
+					(stream) => extractStreamKey(stream.listenurl) === streamKey
+				);
+
+				const decodedTitle = matchingSource.title
+					? decodeWithFallback(Buffer.from(matchingSource.title, 'binary'))
+					: 'Прямой эфир';
+				const [artist, title] = decodedTitle
+					? decodedTitle.split(' - ')
+					: ['Прямой', 'эфир'];
+
+				await updateRadioStream(record.listen_url, {
+					listeners: matchingSource.listeners,
+					artist: artist?.trim(),
+					title: title?.trim(),
+					date_updated: new Date().toISOString(),
+				});
 			}
-
-			// Обновляем записи
-			const updatedStreams = await Promise.all(
-				icecastSources.map(async (stream, index) => {
-					const decodedTitle = stream.title
-						? decodeWithFallback(Buffer.from(stream.title, 'binary'))
-						: 'Прямой эфир';
-					const [artist, title] = decodedTitle
-						? decodedTitle.split(' - ')
-						: ['Прямой', 'эфир'];
-
-					// Подготовка данных для обновления
-					const radioStreamData = {
-						id: existingStreams[index]?.id || null,
-						listenUrl: stream.listenurl,
-						listeners: stream.listeners,
-						serverUrl: stream.server_url,
-						artist: artist?.trim(),
-						title: title?.trim(),
-					};
-
-					// Обновляем запись в Directus
-					if (existingStreams[index]) {
-						await updateRadioStream(existingStreams[index].id, radioStreamData);
-					}
-
-					return radioStreamData;
-				})
-			);
-
-			// Обновляем локальное состояние
-			this.streams = updatedStreams;
-
-			// Уведомляем всех клиентов через WebSocket
-			this.io?.emit('radio-streams', this.streams);
-		} catch (error) {
-			console.error('Ошибка при запросе данных с Icecast:', error);
 		}
-	}
-
-	startUpdating() {
-		this.fetchStreams();
-		setInterval(() => this.fetchStreams(), 5000); // Обновление данных каждые 5 секунд
+	} catch (error) {
+		console.error('Ошибка при синхронизации данных с Icecast:', error);
 	}
 }
 
-export default RadioStreamManager;
+// Функция для запуска цикла синхронизации
+export function startStreamSync(io, interval = 5000) {
+	const syncAndNotify = async () => {
+		await syncStreamsWithIcecast();
+		let updatedStreams = await getRadioStreamData(); // Получаем актуальные данные из Directus
+		updatedStreams = updatedStreams.filter((stream) => stream.isStreamed);
+		io?.emit('radio-streams', updatedStreams);
+	};
+
+	syncAndNotify(); // Первый запуск
+	setInterval(syncAndNotify, interval); // Повторный запуск каждые 5 секунд
+}

@@ -1,11 +1,12 @@
 import express from 'express';
-import RadioStreamManager from '../models/RadioStreamManager.js';
+import { getRadioStreamData } from '../services/directusService.js';
 
 const router = express.Router();
-const radioStreamManager = new RadioStreamManager();
 
-router.get('/radio-streams', (req, res) => {
-	res.json({ streams: radioStreamManager.streams });
+router.get('/radio-streams', async (req, res) => {
+	let streams = await getRadioStreamData();
+	streams = streams.filter((stream) => stream.isStreamed);
+	res.json(streams);
 });
 
 export const radioStreamController = router;
