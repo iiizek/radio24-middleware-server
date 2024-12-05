@@ -1,5 +1,5 @@
 import express from 'express';
-import { fetchTrackCover } from '../services/spotifyService.js';
+import { fetchTrackCover } from '../services/iTunesService.js';
 
 const router = express.Router();
 

@@ -73,6 +73,12 @@ export function startStreamSync(io, interval = 5000) {
 		await syncStreamsWithIcecast();
 		let updatedStreams = await getRadioStreamData(); // Получаем актуальные данные из Directus
 		updatedStreams = updatedStreams.filter((stream) => stream.isStreamed);
+		updatedStreams = updatedStreams.map((stream) => {
+			return {
+				...stream,
+				listen_url: `http://stream.vyshka24.ru:80/${stream.listen_url}`,
+			};
+		});
 		io?.emit('radio-streams', updatedStreams);
 	};
 
