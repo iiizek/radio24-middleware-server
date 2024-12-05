@@ -55,3 +55,15 @@ export const createRadioStream = async (data) => {
 		throw error;
 	}
 };
+
+export const getPosters = async () => {
+	try {
+		const response = await axios.get(`${directusBaseUrl}/items/posters`, {
+			headers: { Authorization: `Bearer ${apiToken}` },
+		});
+		return response.data.data;
+	} catch (error) {
+		console.error('Ошибка при получении данных из Directus:', error);
+		throw error;
+	}
+};

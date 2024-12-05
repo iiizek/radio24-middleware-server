@@ -5,6 +5,8 @@ import 'dotenv/config';
 
 import { trackCoverController } from './controllers/trackCoverController.js';
 import { radioStreamController } from './controllers/radioStreamController.js';
+import { postersController } from './controllers/postersController.js';
+
 import { startStreamSync } from './models/RadioStreamManager.js';
 
 const app = express();
@@ -28,6 +30,7 @@ io.on('connection', (socket) => {
 // Маршруты API
 app.use('/api', trackCoverController);
 app.use('/api', radioStreamController);
+app.use('/api', postersController);
 
 // Запуск сервера
 server.listen(PORT, () => {

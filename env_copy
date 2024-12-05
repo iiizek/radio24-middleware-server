@@ -15,9 +15,6 @@
 EXPRESS_PORT=8054
 DIRECTUS_ACCESS_TOKEN="# secret token from Directus admin"
 
-SPOTIFY_CLIENT_ID="# client id "
-SPOTIFY_CLIENT_SECRET=" # client secret "
-
 # IP or host the API listens on ["0.0.0.0"]
 HOST="0.0.0.0"
 
