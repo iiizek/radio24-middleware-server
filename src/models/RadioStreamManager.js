@@ -55,7 +55,11 @@ export async function syncStreamsWithIcecast() {
 					: ['Прямой эфир', null];
 
 				await updateRadioStream(record.listen_url, {
+					bitrate: matchingSource.bitrate,
 					listeners: matchingSource.listeners,
+					listeners_peak: matchingSource.listener_peak,
+					stream_url: matchingSource.listenurl,
+					server_type: matchingSource.server_type,
 					artist: artist?.trim(),
 					title: title?.trim(),
 					date_updated: new Date().toISOString(),

@@ -35,27 +35,6 @@ export async function updateRadioStream(id, data) {
 	}
 }
 
-export const createRadioStream = async (data) => {
-	try {
-		const response = await axios.post(
-			`${directusBaseUrl}/items/radio_streams`,
-			data,
-			{
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-				},
-			}
-		);
-		return response.data;
-	} catch (error) {
-		console.error(
-			'Ошибка при создании записи в Directus:',
-			error.response?.data || error.message
-		);
-		throw error;
-	}
-};
-
 export const getPosters = async () => {
 	try {
 		const response = await axios.get(`${directusBaseUrl}/items/posters`, {
